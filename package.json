@@ -2,12 +2,16 @@
   "name": "sisteventcalendar",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev",
     "build": "cd frontend && npm run build",
     "start": "cd frontend && npm start",
+    "postinstall": "cd frontend && npm install",
     "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install"
   },
   "devDependencies": {
