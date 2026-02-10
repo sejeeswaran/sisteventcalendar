@@ -117,24 +117,22 @@ export default function StaffDashboard() {
                             };
 
                             return (
-                                <div
+                                <button
+                                    type="button"
                                     key={day.toISOString()}
                                     className="calendar-day"
                                     onClick={() => setSelectedDate(day)}
-                                    role="button"
-                                    tabIndex={0}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            setSelectedDate(day);
-                                        }
-                                    }}
+                                    // Button handles enter/space natively, but if we want custom logic or just rely on click:
+                                    // onClick handles both for <button>.
+                                    // Removing explicit onKeyDown unless needed for specific non-standard behavior.
+                                    // SonarQube prefers semantic button.
                                     style={dayStyle}
                                 >
                                     <span>{format(day, 'd')}</span>
                                     {hasEvent && (
                                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: isSelected ? 'white' : 'var(--secondary)', marginTop: '4px' }}></div>
                                     )}
-                                </div>
+                                </button>
                             );
                         })}
                     </div>
