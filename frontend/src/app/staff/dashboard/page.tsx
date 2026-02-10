@@ -90,17 +90,16 @@ export default function StaffDashboard() {
                             const dayEvents = events.filter(e => isSameDay(parseISO(e.date), day));
                             const hasEvent = dayEvents.length > 0;
 
-                            const backgroundColor = isSelected
-                                ? 'var(--primary)'
-                                : isCurrentMonth
-                                    ? 'rgba(255,255,255,0.05)'
-                                    : 'transparent';
+                            let backgroundColor = 'transparent';
+                            let textColor = 'var(--text-muted)';
 
-                            const textColor = isSelected
-                                ? 'white'
-                                : isCurrentMonth
-                                    ? 'inherit'
-                                    : 'var(--text-muted)';
+                            if (isSelected) {
+                                backgroundColor = 'var(--primary)';
+                                textColor = 'white';
+                            } else if (isCurrentMonth) {
+                                backgroundColor = 'rgba(255,255,255,0.05)';
+                                textColor = 'inherit';
+                            }
 
                             const dayStyle = {
                                 aspectRatio: '1',
