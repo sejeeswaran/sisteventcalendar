@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { apiGet } from '@/lib/api';
@@ -25,10 +25,10 @@ interface Event {
     venue: string;
 }
 
-export default function AttendeesPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
+export default function AttendeesPage({ params }: Readonly<{ params: { id: string } }>) {
     const { user, token, isLoading } = useAuth();
     const router = useRouter();
-    const { id } = use(params);
+    const { id } = params;
     const [attendees, setAttendees] = useState<Attendee[]>([]);
     const [event, setEvent] = useState<Event | null>(null);
     const [loading, setLoading] = useState(true);
@@ -94,7 +94,7 @@ export default function AttendeesPage({ params }: Readonly<{ params: Promise<{ i
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
+        link.remove();
     };
 
     if (isLoading || loading) return <div className="container text-center pt-20">Loading...</div>;
