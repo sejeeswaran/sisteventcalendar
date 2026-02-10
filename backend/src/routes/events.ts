@@ -35,8 +35,8 @@ router.get('/', async (req: Request, res: Response) => {
         const enrichedEvents = events.map((event: any) => ({
             ...event,
             organizer: organizers[event.organizerId] ? {
-                name: organizers[event.organizerId].name,
-                email: organizers[event.organizerId].email
+                name: organizers[event.organizerId]?.name,
+                email: organizers[event.organizerId]?.email
             } : null
         }));
 
@@ -83,7 +83,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
             posterUrl: posterUrl || '',
             posterType: posterType || 'image/jpeg',
             registrationLink: registrationLink || '',
-            limit: parseInt(limit) || 0,
+            limit: Number.parseInt(limit) || 0,
             organizerId: user.userId,
             createdAt: new Date().toISOString()
         };
@@ -100,7 +100,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 // GET /api/events/:id
 router.get('/:id', async (req: AuthRequest, res: Response) => {
     const user = getUserFromToken(req);
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     if (!user) {
         return res.status(401).json({ error: 'Unauthorized' });
@@ -124,7 +124,7 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
 // PUT /api/events/:id
 router.put('/:id', async (req: AuthRequest, res: Response) => {
     const user = getUserFromToken(req);
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     if (!user || (user.role !== 'ORGANIZER' && user.role !== 'ADMIN')) {
         return res.status(403).json({ error: 'Unauthorized' });
@@ -150,7 +150,7 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
         };
 
         if (body.date) updateData.date = new Date(body.date).toISOString();
-        if (body.limit) updateData.limit = parseInt(body.limit);
+        if (body.limit) updateData.limit = Number.parseInt(body.limit);
 
         await docRef.update(updateData);
 
@@ -164,7 +164,7 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
 // DELETE /api/events/:id
 router.delete('/:id', async (req: AuthRequest, res: Response) => {
     const user = getUserFromToken(req);
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     if (!user || (user.role !== 'ORGANIZER' && user.role !== 'ADMIN')) {
         return res.status(403).json({ error: 'Unauthorized' });
@@ -193,9 +193,9 @@ router.delete('/:id', async (req: AuthRequest, res: Response) => {
 // POST /api/events/:id/register
 router.post('/:id/register', async (req: AuthRequest, res: Response) => {
     const user = getUserFromToken(req);
-    const { id } = req.params;
+    const id = req.params.id as string;
 
-    if (!user || user.role !== 'STUDENT') {
+    if (!user || user?.role !== 'STUDENT') {
         return res.status(403).json({ error: 'Unauthorized. Only students can register.' });
     }
 
@@ -276,7 +276,7 @@ router.post('/:id/register', async (req: AuthRequest, res: Response) => {
 // GET /api/events/:id/attendees
 router.get('/:id/attendees', async (req: AuthRequest, res: Response) => {
     const user = getUserFromToken(req);
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     if (!user || (user.role !== 'ORGANIZER' && user.role !== 'ADMIN' && user.role !== 'STAFF')) {
         return res.status(403).json({ error: 'Unauthorized' });
