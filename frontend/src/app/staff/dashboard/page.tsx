@@ -90,6 +90,18 @@ export default function StaffDashboard() {
                             const dayEvents = events.filter(e => isSameDay(parseISO(e.date), day));
                             const hasEvent = dayEvents.length > 0;
 
+                            const backgroundColor = isSelected
+                                ? 'var(--primary)'
+                                : isCurrentMonth
+                                    ? 'rgba(255,255,255,0.05)'
+                                    : 'transparent';
+
+                            const textColor = isSelected
+                                ? 'white'
+                                : isCurrentMonth
+                                    ? 'inherit'
+                                    : 'var(--text-muted)';
+
                             const dayStyle = {
                                 aspectRatio: '1',
                                 display: 'flex',
@@ -98,8 +110,8 @@ export default function StaffDashboard() {
                                 justifyContent: 'center',
                                 cursor: 'pointer',
                                 borderRadius: '8px',
-                                background: isSelected ? 'var(--primary)' : (isCurrentMonth ? 'rgba(255,255,255,0.05)' : 'transparent'),
-                                color: isSelected ? 'white' : (isCurrentMonth ? 'inherit' : 'var(--text-muted)'),
+                                background: backgroundColor,
+                                color: textColor,
                                 border: isSelected ? 'none' : '1px solid var(--border)',
                                 position: 'relative' as const
                             };
