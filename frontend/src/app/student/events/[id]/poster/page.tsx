@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { apiGet, apiPost } from '@/lib/api';
 
-export default function PosterPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
+export default function PosterPage({ params }: Readonly<{ params: { id: string } }>) {
     const { user, token, isLoading } = useAuth();
     const router = useRouter();
-    const { id } = use(params);
+    const { id } = params;
     const [event, setEvent] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
