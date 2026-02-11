@@ -1,6 +1,5 @@
 import nodemailer from 'nodemailer';
 import { db } from './firebase-admin.js';
-
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.ethereal.email',
     port: Number.parseInt(process.env.SMTP_PORT || '587', 10),
@@ -10,8 +9,7 @@ const transporter = nodemailer.createTransport({
         pass: process.env.SMTP_PASS || 'ethereal_pass',
     },
 });
-
-export async function sendConfirmationEmail(to: string, eventDetails: any) {
+export async function sendConfirmationEmail(to, eventDetails) {
     try {
         const info = await transporter.sendMail({
             from: '"College Events" <noreply@collegeevents.com>',
@@ -20,7 +18,6 @@ export async function sendConfirmationEmail(to: string, eventDetails: any) {
             text: `Hello,\n\nYou have successfully registered for ${eventDetails.title}.\n\nDate: ${new Date(eventDetails.date).toLocaleString()}\nVenue: ${eventDetails.venue}\n\nSee you there!`,
             html: `<p>Hello,</p><p>You have successfully registered for <strong>${eventDetails.title}</strong>.</p><p><strong>Date:</strong> ${new Date(eventDetails.date).toLocaleString()}<br><strong>Venue:</strong> ${eventDetails.venue}</p><p>See you there!</p>`,
         });
-
         await db.collection('email_logs').add({
             to,
             subject: `Registration Confirmed: ${eventDetails.title}`,
@@ -28,12 +25,11 @@ export async function sendConfirmationEmail(to: string, eventDetails: any) {
             messageId: info.messageId,
             createdAt: new Date().toISOString()
         });
-
         console.log('Email sent:', info.messageId);
         return true;
-    } catch (error: any) {
+    }
+    catch (error) {
         console.error('Email sending failed:', error);
-
         await db.collection('email_logs').add({
             to,
             subject: `Registration Confirmed: ${eventDetails.title}`,

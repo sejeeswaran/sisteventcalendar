@@ -1,38 +1,22 @@
 import jwt from 'jsonwebtoken';
-import { Request, Response, NextFunction } from 'express';
-
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
-
-export interface AuthUser {
-    userId: string;
-    email: string;
-    role: string;
-}
-
-export interface AuthRequest extends Request {
-    user?: AuthUser;
-}
-
-export function getUserFromToken(req: Request): AuthUser | null {
+export function getUserFromToken(req) {
     const authHeader = req.headers.authorization;
-
     if (!authHeader?.startsWith('Bearer ')) {
         return null;
     }
-
     const token = authHeader.split(' ')[1];
-
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        return decoded as AuthUser;
-    } catch (error) {
+        return decoded;
+    }
+    catch (error) {
         console.error('JWT verification failed:', error);
         return null;
     }
 }
-
 // Middleware to require authentication
-export function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
+export function requireAuth(req, res, next) {
     const user = getUserFromToken(req);
     if (!user) {
         return res.status(401).json({ error: 'Unauthorized' });
@@ -40,10 +24,9 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
     req.user = user;
     next();
 }
-
 // Middleware to require specific roles
-export function requireRoles(...roles: string[]) {
-    return (req: AuthRequest, res: Response, next: NextFunction) => {
+export function requireRoles(...roles) {
+    return (req, res, next) => {
         const user = getUserFromToken(req);
         if (!user) {
             return res.status(401).json({ error: 'Unauthorized' });
