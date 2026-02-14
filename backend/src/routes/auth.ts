@@ -66,7 +66,7 @@ router.post('/register', async (req: Request, res: Response) => {
 
         try {
             if (role === 'STUDENT') {
-                user = await handleStudentRegister(name, registerNumber, role, password);
+                user = await handleStudentRegister(name, registerNumber, role, password, email);
             } else {
                 user = await handleStaffRegister(email, password, name, role);
             }
@@ -75,7 +75,7 @@ router.post('/register', async (req: Request, res: Response) => {
         }
 
         const token = jwt.sign(
-            { userId: user.id, email: (user as any).email, role: user.role },
+            { userId: user.id, email: user.email, role: user.role },
             JWT_SECRET,
             { expiresIn: '1d' }
         );
@@ -141,7 +141,7 @@ async function handleStaffLogin(email: string, password: string) {
     };
 }
 
-async function handleStudentRegister(name: string, registerNumber: string, role: string, password: string) {
+async function handleStudentRegister(name: string, registerNumber: string, role: string, password: string, email?: string) {
     if (!registerNumber) throw new Error('Register Number is required for Students');
 
     const snapshot = await db.collection('users').where('registerNumber', '==', registerNumber).get();
@@ -152,12 +152,13 @@ async function handleStudentRegister(name: string, registerNumber: string, role:
     const newUserRef = await db.collection('users').add({
         name,
         registerNumber,
+        email: email || null,
         role,
         password: hashedPassword,
         createdAt: new Date().toISOString()
     });
 
-    return { id: newUserRef.id, registerNumber, role, name };
+    return { id: newUserRef.id, registerNumber, role, name, email };
 }
 
 async function handleStaffRegister(email: string, password: string, name: string, role: string) {
