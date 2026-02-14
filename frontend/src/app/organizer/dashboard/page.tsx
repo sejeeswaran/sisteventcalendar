@@ -26,8 +26,7 @@ export default function OrganizerDashboard() {
     const [events, setEvents] = useState<any[]>([]);
     const [showForm, setShowForm] = useState(false);
     const [editingEvent, setEditingEvent] = useState<any>(null);
-    const [attendees, setAttendees] = useState<{ [key: string]: any[] }>({});
-    const [viewingAttendees, setViewingAttendees] = useState<string | null>(null);
+
     const [uploading, setUploading] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -83,7 +82,7 @@ export default function OrganizerDashboard() {
                 const base64 = result.split(',')[1];
                 resolve(base64);
             };
-            reader.onerror = error => reject(error);
+            reader.onerror = () => reject(new Error('Failed to read file'));
         });
     };
 
@@ -170,6 +169,7 @@ export default function OrganizerDashboard() {
                 alert(err.error || 'Error deleting event');
             }
         } catch (err) {
+            console.error('Delete error:', err);
             alert('Network error while deleting');
         }
     };
@@ -194,22 +194,6 @@ export default function OrganizerDashboard() {
         setShowForm(true);
     };
 
-    const fetchAttendees = async (id: string) => {
-        if (viewingAttendees === id) {
-            setViewingAttendees(null);
-            return;
-        }
-        try {
-            const res = await apiGet(`/api/events/${id}/attendees`);
-            const data = await res.json();
-            if (Array.isArray(data)) {
-                setAttendees({ ...attendees, [id]: data });
-            } else {
-                setAttendees({ ...attendees, [id]: [] });
-            }
-            setViewingAttendees(id);
-        } catch (err) { alert(err); }
-    };
 
     if (isLoading) return <div className="container text-center" style={{ paddingTop: '80px' }}>Loading...</div>;
 
@@ -253,7 +237,7 @@ export default function OrganizerDashboard() {
                                     type="checkbox"
                                     checked={formData.manualVenue}
                                     onChange={e => setFormData({ ...formData, manualVenue: e.target.checked, venue: '' })}
-                                />
+                                />{' '}
                                 Manually Enter Venue
                             </label>
 
@@ -310,7 +294,8 @@ export default function OrganizerDashboard() {
                         </div>
 
                         <button className="btn btn-primary" style={{ width: '100%' }} disabled={uploading}>
-                            {uploading ? 'Saving...' : (editingEvent ? 'Update Event' : 'Publish Event')}
+                            {uploading ? 'Saving...' : ''}
+                            {!uploading && (editingEvent ? 'Update Event' : 'Publish Event')}
                         </button>
                     </form>
                 </div>
