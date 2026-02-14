@@ -47,20 +47,20 @@ export default function MyRegistrations() {
                 ) : (
                     registrations.map(reg => (
                         <div key={reg.id} className="card glass">
-                            <h3>{reg.event.title}</h3>
-                            <p className="text-muted">{format(parseISO(reg.event.date), 'PPpp')}</p>
-                            <p>{reg.event.venue}</p>
+                            <h3>{reg.event?.title || 'Unknown Event'}</h3>
+                            <p className="text-muted">{reg.event?.date ? format(parseISO(reg.event.date), 'PPpp') : 'N/A'}</p>
+                            <p>{reg.event?.venue || 'N/A'}</p>
                             <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{
                                     padding: '4px 8px',
                                     borderRadius: '4px',
                                     fontSize: '0.8rem',
-                                    background: reg.status === 'REGISTERED' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                    color: reg.status === 'REGISTERED' ? '#10b981' : '#ef4444'
+                                    background: 'rgba(16, 185, 129, 0.2)',
+                                    color: '#10b981'
                                 }}>
-                                    {reg.status}
+                                    Registered
                                 </span>
-                                <span className="text-muted" style={{ fontSize: '0.8rem' }}>Registered on {format(parseISO(reg.createdAt), 'P')}</span>
+                                <span className="text-muted" style={{ fontSize: '0.8rem' }}>{reg.createdAt ? `Registered on ${format(parseISO(reg.createdAt), 'P')}` : ''}</span>
                             </div>
                         </div>
                     ))

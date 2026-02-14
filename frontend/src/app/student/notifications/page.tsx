@@ -6,7 +6,7 @@ import { apiGet } from '@/lib/api';
 import { format, parseISO } from 'date-fns';
 
 export default function NotificationsPage() {
-    const { user, token } = useAuth();
+    const { token } = useAuth();
     const [notifications, setNotifications] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -34,7 +34,7 @@ export default function NotificationsPage() {
                         {notifications.map(n => (
                             <li key={n.id} style={{ borderBottom: '1px solid var(--border)', padding: '16px 0' }}>
                                 <p style={{ fontWeight: n.isRead ? 'normal' : 'bold' }}>{n.message}</p>
-                                <span className="text-muted" style={{ fontSize: '0.8rem' }}>{format(parseISO(n.createdAt), 'PPpp')}</span>
+                                <span className="text-muted" style={{ fontSize: '0.8rem' }}>{n.createdAt ? format(parseISO(n.createdAt), 'PPpp') : ''}</span>
                             </li>
                         ))}
                     </ul>
