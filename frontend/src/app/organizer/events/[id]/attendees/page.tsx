@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { apiGet } from '@/lib/api';
@@ -25,10 +25,10 @@ interface Event {
     venue: string;
 }
 
-export default function AttendeesPage({ params }: Readonly<{ params: { id: string } }>) {
+export default function AttendeesPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
     const { user, token, isLoading } = useAuth();
     const router = useRouter();
-    const { id } = params;
+    const { id } = use(params);
     const [attendees, setAttendees] = useState<Attendee[]>([]);
     const [event, setEvent] = useState<Event | null>(null);
     const [loading, setLoading] = useState(true);
