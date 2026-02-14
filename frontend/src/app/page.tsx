@@ -9,6 +9,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('STUDENT'); // STUDENT, ADMIN, STAFF
   const [identifier, setIdentifier] = useState(''); // Email or Register Number based on tab
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -78,10 +79,11 @@ export default function Home() {
 
         <form onSubmit={handleSubmit}>
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>
+            <label htmlFor="identifier" style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>
               {activeTab === 'STUDENT' ? 'Register Number' : 'Email Address'}
             </label>
             <input
+              id="identifier"
               type={activeTab === 'STUDENT' ? 'text' : 'email'}
               className="input"
               value={identifier}
@@ -92,15 +94,37 @@ export default function Home() {
           </div>
 
           <div style={{ marginTop: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Password</label>
-            <input
-              type="password"
-              className="input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-            />
+            <label htmlFor="password" style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Password</label>
+            <div style={{ position: 'relative' }}>
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                className="input"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+                style={{ paddingRight: '50px' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  fontSize: '0.8rem',
+                  padding: '4px'
+                }}
+              >
+                {showPassword ? 'HIDE' : 'SHOW'}
+              </button>
+            </div>
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '20px' }} disabled={loading}>
