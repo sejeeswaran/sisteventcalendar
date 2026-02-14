@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, SyntheticEvent } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { apiPost } from '@/lib/api';
 import Link from 'next/link';
@@ -14,7 +14,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setLoading(true);

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -20,28 +20,45 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        const storedToken = localStorage.getItem('token');
+        const initAuth = () => {
+            try {
+                const storedUser = localStorage.getItem('user');
+                const storedToken = localStorage.getItem('token');
 
-        if (storedUser && storedToken) {
-            setUser(JSON.parse(storedUser));
-            setToken(storedToken);
-        }
-        setIsLoading(false);
+                if (storedUser && storedToken && storedUser !== 'undefined') {
+                    const parsedUser = JSON.parse(storedUser);
+                    setUser(parsedUser);
+                    setToken(storedToken);
+                }
+            } catch (error) {
+                console.error("Failed to restore auth session:", error);
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        initAuth();
     }, []);
 
-    const login = (newToken: string, newUser: User) => {
+    const login = useCallback((newToken: string, newUser: User) => {
+        setIsLoading(true);
         setToken(newToken);
         setUser(newUser);
-        localStorage.setItem('token', newToken);
-        localStorage.setItem('user', JSON.stringify(newUser));
+        try {
+            localStorage.setItem('token', newToken);
+            localStorage.setItem('user', JSON.stringify(newUser));
+        } catch (e) {
+            console.error("Failed to save auth session:", e);
+        }
+        setIsLoading(false);
 
         if (newUser.role === 'STUDENT') {
             router.push('/student/dashboard');
@@ -50,18 +67,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
             router.push('/organizer/dashboard');
         }
-    };
+    }, [router]);
 
-    const logout = () => {
+    const logout = useCallback(() => {
         setToken(null);
         setUser(null);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        try {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+        } catch (e) {
+            console.error("Failed to clear auth session:", e);
+        }
         router.push('/');
-    };
+    }, [router]);
+
+    const value = useMemo(() => ({ user, token, login, logout, isLoading }), [user, token, login, logout, isLoading]);
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );
