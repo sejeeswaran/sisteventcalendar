@@ -1,10 +1,8 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-
 export async function apiRequest(
     endpoint: string,
     options: RequestInit = {}
 ): Promise<Response> {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const token = globalThis.window === undefined ? null : localStorage.getItem('token');
 
     const headers: HeadersInit = {
         'Content-Type': 'application/json',
@@ -12,7 +10,7 @@ export async function apiRequest(
         ...options.headers,
     };
 
-    return fetch(`${API_URL}${endpoint}`, {
+    return fetch(endpoint, {
         ...options,
         headers,
     });
