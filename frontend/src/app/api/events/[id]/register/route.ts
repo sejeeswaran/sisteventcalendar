@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/server/firebase-admin';
 import { getUserFromRequest } from '@/lib/server/auth';
 import { sendConfirmationEmail } from '@/lib/server/email';
+import { subHours, isAfter } from 'date-fns';
 
 // POST /api/events/[id]/register
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -27,9 +28,35 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             limit: eventData?.limit || 0,
             title: eventData?.title || '',
             date: eventData?.date,
+            dateOnly: eventData?.dateOnly,
+            fromTime: eventData?.fromTime,
             venue: eventData?.venue,
             organizerId: eventData?.organizerId
         };
+
+        // Check 4-hour deadline
+        let eventStart: Date | null = null;
+        if (event.date) {
+            // Try parsing full ISO string
+            const parsed = new Date(event.date);
+            if (!Number.isNaN(parsed.getTime())) eventStart = parsed;
+        }
+
+        if (!eventStart && event.dateOnly && event.fromTime) {
+            // Fallback to manual construction
+            eventStart = new Date(`${event.dateOnly}T${event.fromTime}`);
+        }
+
+        if (eventStart && !Number.isNaN(eventStart.getTime())) {
+            const deadline = subHours(eventStart, 4);
+            const now = new Date();
+
+            if (isAfter(now, deadline)) {
+                return NextResponse.json({
+                    error: 'Registration closed. Registration must be completed at least 4 hours before the event starts.'
+                }, { status: 400 });
+            }
+        }
 
         // Check limit
         if (event.limit > 0) {

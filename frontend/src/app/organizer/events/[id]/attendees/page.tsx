@@ -102,7 +102,7 @@ export default function AttendeesPage({ params }: Readonly<{ params: Promise<{ i
     return (
         <div className="container" style={{ paddingTop: '40px' }}>
             <div className="flex gap-2 mb-4">
-                <button className="btn btn-outline" onClick={() => router.back()}>&larr; Back to Dashboard</button>
+                <button className="btn btn-outline" onClick={() => router.push('/organizer/dashboard')}>&larr; Back to Dashboard</button>
                 {attendees.length > 0 && (
                     <button
                         className="btn"

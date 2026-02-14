@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { apiGet, apiPost } from '@/lib/api';
+import { subHours, isAfter } from 'date-fns';
 
 export default function PosterPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
     const { user, token, isLoading } = useAuth();
@@ -62,7 +63,28 @@ export default function PosterPage({ params }: Readonly<{ params: Promise<{ id: 
         }
     };
 
+    // Calculate deadline status
+    let isRegistrationClosed = false;
+    if (event) {
+        let eventStart: Date | null = null;
+        if (event.date) {
+            const parsed = new Date(event.date);
+            if (!Number.isNaN(parsed.getTime())) eventStart = parsed;
+        }
+
+        if (!eventStart && event.dateOnly && event.fromTime) {
+            eventStart = new Date(`${event.dateOnly}T${event.fromTime}`);
+        }
+
+        if (eventStart && !Number.isNaN(eventStart.getTime())) {
+            const deadline = subHours(eventStart, 4);
+            if (isAfter(new Date(), deadline)) isRegistrationClosed = true;
+        }
+    }
+
     const handleProceed = () => {
+        if (isRegistrationClosed) return;
+
         if (event?.registrationLink) {
             // Open Google Form and show modal WITHOUT registering yet
             globalThis.open(event.registrationLink, '_blank');
@@ -125,8 +147,31 @@ export default function PosterPage({ params }: Readonly<{ params: Promise<{ id: 
                 </div>
 
                 <div className="p-6 pt-8 border-t border-gray-700" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <button className="btn btn-primary px-8" onClick={handleProceed} style={{ width: '100%' }}>
-                        {event.registrationLink ? 'Register & Fill Google Form' : 'Confirm Registration'}
+                    {isRegistrationClosed && (
+                        <div style={{
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            color: '#dc3545',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            marginBottom: '16px',
+                            border: '1px solid #dc3545',
+                            textAlign: 'center',
+                            fontWeight: '600'
+                        }}>
+                            Registration is closed. Must register 4 hours before event starts.
+                        </div>
+                    )}
+                    <button
+                        className="btn btn-primary px-8"
+                        onClick={handleProceed}
+                        style={{ width: '100%' }}
+                        disabled={isRegistrationClosed}
+                    >
+                        {isRegistrationClosed
+                            ? 'Registration Closed'
+                            : event.registrationLink
+                                ? 'Register & Fill Google Form'
+                                : 'Confirm Registration'}
                     </button>
                     <button className="btn btn-outline" onClick={() => router.push('/student/dashboard')} style={{ width: '100%' }}>Cancel</button>
                 </div>
