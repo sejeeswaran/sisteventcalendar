@@ -144,7 +144,7 @@ export default function StudentDashboard() {
                                     <h4>{event.title}</h4>
                                     <p className="text-muted" style={{ fontSize: '0.9rem' }}>{format(parseISO(event.date), 'p')} • {event.venue}</p>
                                     <p style={{ margin: '10px 0', fontSize: '0.95rem' }}>{event.description}</p>
-                                    <p className="text-muted" style={{ fontSize: '0.8rem', marginBottom: '16px' }}>By {event.organizer.name}</p>
+                                    <p className="text-muted" style={{ fontSize: '0.8rem', marginBottom: '16px' }}>By {event.organizer?.name || 'Unknown'}</p>
 
                                     <button
                                         onClick={() => router.push(`/student/events/${event.id}/poster`)}
