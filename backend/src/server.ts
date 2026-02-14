@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
-import * as path from 'path';
+import * as path from 'node:path';
 
 // Load env from root .env file
 dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
