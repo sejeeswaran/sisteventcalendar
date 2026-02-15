@@ -6,13 +6,13 @@
     "node": ">=18.x"
   },
   "scripts": {
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev:backend": "cd backend && npm run dev",
-    "build": "cd frontend && npm run build",
-    "start": "cd frontend && npm start",
-    "postinstall": "cd frontend && npm install",
-    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install"
+    "dev": "concurrently \"pnpm run dev:backend\" \"pnpm run dev:frontend\"",
+    "dev:frontend": "cd frontend && pnpm run dev",
+    "dev:backend": "cd backend && pnpm run dev",
+    "build": "cd frontend && pnpm run build",
+    "start": "cd frontend && pnpm start",
+    "postinstall": "cd frontend && pnpm install",
+    "install:all": "pnpm install && cd frontend && pnpm install && cd ../backend && pnpm install"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
