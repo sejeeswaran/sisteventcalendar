@@ -7,7 +7,17 @@ import { subHours, isAfter } from 'date-fns';
 
 // --- Helper Functions ---
 
-function getEventStartDate(event: any): Date | null {
+interface EventData {
+    date?: string;
+    dateOnly?: string;
+    fromTime?: string;
+    title?: string;
+    limit?: number;
+    venue?: string;
+    organizerId?: string;
+}
+
+function getEventStartDate(event: EventData): Date | null {
     if (event.date) {
         const parsed = new Date(event.date);
         if (!Number.isNaN(parsed.getTime())) return parsed;
@@ -44,7 +54,7 @@ function checkDeadlines(eventStart: Date | null): string | null {
     return null;
 }
 
-async function updateNotifications(user: AuthUser, event: any) {
+async function updateNotifications(user: AuthUser, event: EventData) {
     try {
         const db = getDb();
         const batch = db.batch();

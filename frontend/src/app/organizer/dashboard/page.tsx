@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, SyntheticEvent } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api';
@@ -16,16 +16,33 @@ const BUILDINGS = [
     'Department of Electrical & Electronics Engineering', 'Department of Mechanical Engineering', 'Machine Shop & Drawing Hall', 'Fluid Mechanics Laboratory', 'Thermal Laboratory', 'Department of Chemical Engineering', 'Department of Aeronautical Engineering',
     'Department of Automobile Engineering', 'Bio-Medical Laboratory', 'Department of Physics, Chemistry & Mathematics', 'Department of Civil Engineering',
     'Department of Biotechnology & Biomedical Engineering', 'Department of Visual Communication', 'Department of Architecture', 'Department of Fashion Design',
-    'School of Law', 'School of Pharmacy', 'School of Management Studies', 'School of Nursing', 'Dental College & Hospital',
     'Student Activity Centre', 'Open Air Theatre (OAT)', 'Sathyabama Indoor Auditorium', 'Dr. Remibai Jeppiaar Auditorium', 'Main Auditorium'
 ];
+
+interface Event {
+    id: string;
+    title: string;
+    description: string;
+    date: string;
+    fromTime: string;
+    toTime: string;
+    venue: string;
+    room?: string;
+    category: string;
+    posterUrl?: string;
+    posterType?: string;
+    limit: number | string;
+    registrationLink?: string;
+    organizerId: string;
+    createdAt?: string;
+}
 
 export default function OrganizerDashboard() {
     const { user, token, isLoading } = useAuth();
     const router = useRouter();
-    const [events, setEvents] = useState<any[]>([]);
+    const [events, setEvents] = useState<Event[]>([]);
     const [showForm, setShowForm] = useState(false);
-    const [editingEvent, setEditingEvent] = useState<any>(null);
+    const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
     const [uploading, setUploading] = useState(false);
 
@@ -53,7 +70,7 @@ export default function OrganizerDashboard() {
         const res = await apiGet('/api/events');
         const data = await res.json();
         if (Array.isArray(data)) {
-            setEvents(data.filter((e: any) => user?.role === 'ADMIN' ? true : e.organizerId === user?.id));
+            setEvents(data.filter((e: Event) => user?.role === 'ADMIN' ? true : e.organizerId === user?.id));
         }
     };
 
@@ -86,7 +103,7 @@ export default function OrganizerDashboard() {
         });
     };
 
-    const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleCreate = async (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!token) return;
         setUploading(true);
@@ -174,7 +191,7 @@ export default function OrganizerDashboard() {
         }
     };
 
-    const handleEdit = (event: any) => {
+    const handleEdit = (event: Event) => {
         setEditingEvent(event);
         setFormData({
             title: event.title || '',

@@ -20,14 +20,14 @@ export async function apiGet(endpoint: string) {
     return apiRequest(endpoint, { method: 'GET' });
 }
 
-export async function apiPost(endpoint: string, body: any) {
+export async function apiPost(endpoint: string, body: unknown) {
     return apiRequest(endpoint, {
         method: 'POST',
         body: JSON.stringify(body),
     });
 }
 
-export async function apiPut(endpoint: string, body: any) {
+export async function apiPut(endpoint: string, body: unknown) {
     return apiRequest(endpoint, {
         method: 'PUT',
         body: JSON.stringify(body),

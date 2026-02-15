@@ -93,6 +93,19 @@ export default function StudentDashboard() {
                             const hasEvent = dayEvents.length > 0;
 
 
+                            let dayBackground = 'transparent';
+                            let dayColor = 'var(--text-muted)';
+                            let dayBorder = '1px solid var(--border)';
+
+                            if (isSelected) {
+                                dayBackground = 'var(--primary)';
+                                dayColor = 'white';
+                                dayBorder = 'none';
+                            } else if (isCurrentMonth) {
+                                dayBackground = 'rgba(255,255,255,0.05)';
+                                dayColor = 'inherit';
+                            }
+
                             const dayStyle = {
                                 aspectRatio: '1',
                                 display: 'flex',
@@ -101,31 +114,25 @@ export default function StudentDashboard() {
                                 justifyContent: 'center',
                                 cursor: 'pointer',
                                 borderRadius: '8px',
-                                background: isSelected ? 'var(--primary)' : (isCurrentMonth ? 'rgba(255,255,255,0.05)' : 'transparent'),
-                                color: isSelected ? 'white' : (isCurrentMonth ? 'inherit' : 'var(--text-muted)'),
-                                border: isSelected ? 'none' : '1px solid var(--border)',
+                                background: dayBackground,
+                                color: dayColor,
+                                border: dayBorder,
                                 position: 'relative' as const
                             };
 
                             return (
-                                <div
+                                <button
                                     key={day.toISOString()}
                                     className="calendar-day"
                                     onClick={() => setSelectedDate(day)}
-                                    role="button"
-                                    tabIndex={0}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            setSelectedDate(day);
-                                        }
-                                    }}
+                                    type="button"
                                     style={dayStyle}
                                 >
                                     <span>{format(day, 'd')}</span>
                                     {hasEvent && (
                                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: isSelected ? 'white' : 'var(--secondary)', marginTop: '4px' }}></div>
                                     )}
-                                </div>
+                                </button>
                             );
                         })}
                     </div>
