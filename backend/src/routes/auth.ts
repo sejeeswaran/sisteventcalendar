@@ -3,7 +3,7 @@ import { db, auth } from '../lib/firebase-admin.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-const router = Router();
+const router: Router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY;
 const INVALID_CREDENTIALS_MSG = 'Invalid credentials';

@@ -6,6 +6,56 @@ import { useRouter } from 'next/navigation';
 import { apiGet, apiPost } from '@/lib/api';
 import { subHours, isAfter } from 'date-fns';
 
+const EventPoster = ({ event }: { event: any }) => {
+    if (!event.posterUrl) {
+        return <div className="text-muted p-20">No Poster Available</div>;
+    }
+
+    // Extract ID to construct a direct image URL if possible
+    const match = event.posterUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    const fileId = match ? match[1] : null;
+    const directUrl = fileId ? `https://drive.google.com/uc?export=view&id=${fileId}` : event.posterUrl;
+
+    return (
+        <>
+            <img
+                src={directUrl}
+                alt={event.title || "Event Poster"}
+                style={{ width: '100%', height: 'auto', display: 'block' }}
+                onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const iframe = document.getElementById(`poster-iframe-${event.id}`);
+                    if (iframe) iframe.style.display = 'block';
+                }}
+            />
+            <iframe
+                id={`poster-iframe-${event.id}`}
+                src={event.posterUrl.replace('/view', '/preview')}
+                title={event.title || "Event Poster"}
+                width="100%"
+                height="650"
+                style={{ border: 'none', display: 'none' }}
+                allow="autoplay"
+            ></iframe>
+        </>
+    );
+};
+
+const RegistrationClosedMessage = () => (
+    <div style={{
+        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+        color: '#dc3545',
+        padding: '12px',
+        borderRadius: '8px',
+        marginBottom: '16px',
+        border: '1px solid #dc3545',
+        textAlign: 'center',
+        fontWeight: '600'
+    }}>
+        Registration is closed. Must register 4 hours before event starts.
+    </div>
+);
+
 export default function PosterPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
     const { user, token, isLoading } = useAuth();
     const router = useRouter();
@@ -27,10 +77,6 @@ export default function PosterPage({ params }: Readonly<{ params: Promise<{ id: 
 
     const fetchEvent = async () => {
         try {
-            // Reusing the attendees API logic or a separate GET endpoint would be ideal.
-            // For now, since specific GET events/id is not built public, we might need to fetch all and filter 
-            // OR update the API. Let's assume we can fetch all and filter for now as per dashboard logic.
-            // Better: Implement GET /api/events/[id]
             const res = await apiGet(`/api/events/${id}`);
             if (res.ok) {
                 const data = await res.json();
@@ -63,9 +109,8 @@ export default function PosterPage({ params }: Readonly<{ params: Promise<{ id: 
         }
     };
 
-    // Calculate deadline status
-    let isRegistrationClosed = false;
-    if (event) {
+    const isRegistrationClosed = () => {
+        if (!event) return false;
         let eventStart: Date | null = null;
         if (event.date) {
             const parsed = new Date(event.date);
@@ -78,21 +123,28 @@ export default function PosterPage({ params }: Readonly<{ params: Promise<{ id: 
 
         if (eventStart && !Number.isNaN(eventStart.getTime())) {
             const deadline = subHours(eventStart, 4);
-            if (isAfter(new Date(), deadline)) isRegistrationClosed = true;
+            return isAfter(new Date(), deadline);
         }
-    }
+        return false;
+    };
+
+    const closed = isRegistrationClosed();
 
     const handleProceed = () => {
-        if (isRegistrationClosed) return;
+        if (closed) return;
 
         if (event?.registrationLink) {
-            // Open Google Form and show modal WITHOUT registering yet
             globalThis.open(event.registrationLink, '_blank');
             setShowModal(true);
         } else {
-            // Direct registration
             registerUser();
         }
+    };
+
+    const getButtonText = () => {
+        if (closed) return 'Registration Closed';
+        if (event.registrationLink) return 'Register & Fill Google Form';
+        return 'Confirm Registration';
     };
 
     if (isLoading || loading) return <div className="container text-center pt-20">Loading...</div>;
@@ -110,68 +162,18 @@ export default function PosterPage({ params }: Readonly<{ params: Promise<{ id: 
                 </div>
 
                 <div className="p-0 bg-black flex justify-center items-center" style={{ minHeight: '200px' }}>
-                    {event.posterUrl ? (
-                        (() => {
-                            // Extract ID to construct a direct image URL if possible
-                            const match = event.posterUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                            const fileId = match ? match[1] : null;
-                            const directUrl = fileId ? `https://drive.google.com/uc?export=view&id=${fileId}` : event.posterUrl;
-
-                            return (
-                                <>
-                                    <img
-                                        src={directUrl}
-                                        alt={event.title || "Event Poster"}
-                                        style={{ width: '100%', height: 'auto', display: 'block' }}
-                                        onError={(e) => {
-                                            e.currentTarget.style.display = 'none';
-                                            const iframe = document.getElementById(`poster-iframe-${event.id}`);
-                                            if (iframe) iframe.style.display = 'block';
-                                        }}
-                                    />
-                                    <iframe
-                                        id={`poster-iframe-${event.id}`}
-                                        src={event.posterUrl.replace('/view', '/preview')}
-                                        title={event.title || "Event Poster"}
-                                        width="100%"
-                                        height="650"
-                                        style={{ border: 'none', display: 'none' }}
-                                        allow="autoplay"
-                                    ></iframe>
-                                </>
-                            );
-                        })()
-                    ) : (
-                        <div className="text-muted p-20">No Poster Available</div>
-                    )}
+                    <EventPoster event={event} />
                 </div>
 
                 <div className="p-6 pt-8 border-t border-gray-700" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {isRegistrationClosed && (
-                        <div style={{
-                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                            color: '#dc3545',
-                            padding: '12px',
-                            borderRadius: '8px',
-                            marginBottom: '16px',
-                            border: '1px solid #dc3545',
-                            textAlign: 'center',
-                            fontWeight: '600'
-                        }}>
-                            Registration is closed. Must register 4 hours before event starts.
-                        </div>
-                    )}
+                    {closed && <RegistrationClosedMessage />}
                     <button
                         className="btn btn-primary px-8"
                         onClick={handleProceed}
                         style={{ width: '100%' }}
-                        disabled={isRegistrationClosed}
+                        disabled={closed}
                     >
-                        {isRegistrationClosed
-                            ? 'Registration Closed'
-                            : event.registrationLink
-                                ? 'Register & Fill Google Form'
-                                : 'Confirm Registration'}
+                        {getButtonText()}
                     </button>
                     <button className="btn btn-outline" onClick={() => router.push('/student/dashboard')} style={{ width: '100%' }}>Cancel</button>
                 </div>

@@ -4,7 +4,7 @@ import { getUserFromToken, AuthRequest } from '../lib/auth.js';
 import { sendConfirmationEmail } from '../lib/email.js';
 import { startOfDay, endOfDay } from 'date-fns';
 
-const router = Router();
+const router: Router = Router();
 
 // GET /api/events
 router.get('/', async (req: Request, res: Response) => {

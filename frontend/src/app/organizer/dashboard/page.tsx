@@ -103,6 +103,35 @@ export default function OrganizerDashboard() {
         });
     };
 
+    const uploadPoster = async (file: File) => {
+        const gasUrl = process.env.NEXT_PUBLIC_GOOGLE_SCRIPT_URL;
+        if (!gasUrl) throw new Error('Google Script URL is not configured');
+
+        const base64 = await convertToBase64(file);
+
+        const uploadRes = await fetch(gasUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8',
+            },
+            body: JSON.stringify({
+                filename: file.name,
+                mimeType: file.type,
+                base64: base64
+            })
+        });
+
+        if (!uploadRes.ok) throw new Error('Poster upload failed');
+
+        const uploadJson = await uploadRes.json();
+        if (!uploadJson.success) throw new Error(uploadJson.error || 'Upload failed');
+
+        return {
+            url: uploadJson.previewUrl,
+            type: file.type
+        };
+    };
+
     const handleCreate = async (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!token) return;
@@ -113,31 +142,9 @@ export default function OrganizerDashboard() {
             let uploadedPosterType = formData.posterType;
 
             if (posterFile) {
-                const gasUrl = process.env.NEXT_PUBLIC_GOOGLE_SCRIPT_URL;
-
-                if (!gasUrl) throw new Error('Google Script URL is not configured');
-
-                const base64 = await convertToBase64(posterFile);
-
-                const uploadRes = await fetch(gasUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'text/plain;charset=utf-8',
-                    },
-                    body: JSON.stringify({
-                        filename: posterFile.name,
-                        mimeType: posterFile.type,
-                        base64: base64
-                    })
-                });
-
-                if (!uploadRes.ok) throw new Error('Poster upload failed');
-
-                const uploadJson = await uploadRes.json();
-                if (!uploadJson.success) throw new Error(uploadJson.error || 'Upload failed');
-
-                uploadedPosterUrl = uploadJson.previewUrl;
-                uploadedPosterType = posterFile.type;
+                const { url, type } = await uploadPoster(posterFile);
+                uploadedPosterUrl = url;
+                uploadedPosterType = type;
             }
 
             // Use PUT for editing, POST for creating
@@ -167,8 +174,9 @@ export default function OrganizerDashboard() {
                 const err = await res.json();
                 alert(err.error || 'Error saving event');
             }
-        } catch (err: any) {
-            alert(err.message || 'Error saving event');
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Error saving event';
+            alert(errorMessage);
         } finally {
             setUploading(false);
         }
