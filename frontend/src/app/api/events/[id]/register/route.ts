@@ -1,73 +1,133 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/server/firebase-admin';
-import { getUserFromRequest } from '@/lib/server/auth';
+import { firestore } from 'firebase-admin';
+import { getUserFromRequest, AuthUser } from '@/lib/server/auth';
 import { sendConfirmationEmail } from '@/lib/server/email';
 import { subHours, isAfter } from 'date-fns';
 
-// POST /api/events/[id]/register
+// --- Helper Functions ---
+
+interface EventData {
+    date?: string;
+    dateOnly?: string;
+    fromTime?: string;
+    title?: string;
+    limit?: number;
+    venue?: string;
+    organizerId?: string;
+}
+
+function getEventStartDate(event: EventData): Date | null {
+    if (event.date) {
+        const parsed = new Date(event.date);
+        if (!Number.isNaN(parsed.getTime())) return parsed;
+    }
+    if (event.dateOnly && event.fromTime) {
+        const constructed = new Date(`${event.dateOnly}T${event.fromTime}`);
+        if (!Number.isNaN(constructed.getTime())) return constructed;
+    }
+    return null;
+}
+
+function processEventData(doc: firestore.DocumentSnapshot) {
+    const data = doc.data();
+    if (!data) return null;
+    return {
+        id: doc.id,
+        ...data,
+        limit: data.limit || 0,
+        title: data.title || '',
+        date: data.date,
+        dateOnly: data.dateOnly,
+        fromTime: data.fromTime,
+        venue: data.venue,
+        organizerId: data.organizerId
+    };
+}
+
+function checkDeadlines(eventStart: Date | null): string | null {
+    if (!eventStart) return null;
+    const deadline = subHours(eventStart, 4);
+    if (isAfter(new Date(), deadline)) {
+        return 'Registration closed. Registration must be completed at least 4 hours before the event starts.';
+    }
+    return null;
+}
+
+async function updateNotifications(user: AuthUser, event: EventData) {
+    try {
+        const db = getDb();
+        const batch = db.batch();
+
+        // Student Notification
+        const studentNotifRef = db.collection('notifications').doc();
+        batch.set(studentNotifRef, {
+            userId: user.userId,
+            message: `You have successfully registered for the event: ${event.title}`,
+            createdAt: new Date().toISOString()
+        });
+
+        // Organizer Notification
+        if (event.organizerId) {
+            const orgNotifRef = db.collection('notifications').doc();
+            batch.set(orgNotifRef, {
+                userId: event.organizerId,
+                message: `New registration for ${event.title}: ${user.email}`,
+                createdAt: new Date().toISOString()
+            });
+        }
+
+        await batch.commit();
+
+        // Email (async)
+        // We'll run this concurrently but won't block the main response if it fails, or just log error inside.
+        // It's already wrapped in try-catch in email.ts but calling it here.
+        await sendConfirmationEmail(user.email, event);
+    } catch (error) {
+        console.error('Notification/Email error:', error);
+    }
+}
+
+// --- Main Handler ---
+
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const user = getUserFromRequest(req);
     const { id } = await params;
 
-    if (!user || user?.role !== 'STUDENT') {
+    if (user?.role !== 'STUDENT') {
         return NextResponse.json({ error: 'Unauthorized. Only students can register.' }, { status: 403 });
     }
 
     try {
-        const eventRef = getDb().collection('events').doc(id);
-        const eventDoc = await eventRef.get();
+        const db = getDb();
+        const eventDoc = await db.collection('events').doc(id).get();
 
         if (!eventDoc.exists) {
             return NextResponse.json({ error: 'Event not found' }, { status: 404 });
         }
 
-        const eventData = eventDoc.data();
-        const event = {
-            id: eventDoc.id,
-            ...eventData,
-            limit: eventData?.limit || 0,
-            title: eventData?.title || '',
-            date: eventData?.date,
-            dateOnly: eventData?.dateOnly,
-            fromTime: eventData?.fromTime,
-            venue: eventData?.venue,
-            organizerId: eventData?.organizerId
-        };
-
-        // Check 4-hour deadline
-        let eventStart: Date | null = null;
-        if (event.date) {
-            // Try parsing full ISO string
-            const parsed = new Date(event.date);
-            if (!Number.isNaN(parsed.getTime())) eventStart = parsed;
+        const event = processEventData(eventDoc);
+        if (!event) {
+            return NextResponse.json({ error: 'Event data invalid' }, { status: 500 });
         }
 
-        if (!eventStart && event.dateOnly && event.fromTime) {
-            // Fallback to manual construction
-            eventStart = new Date(`${event.dateOnly}T${event.fromTime}`);
+        // 1. Check Deadline
+        const eventStart = getEventStartDate(event);
+        const deadlineError = checkDeadlines(eventStart);
+        if (deadlineError) {
+            return NextResponse.json({ error: deadlineError }, { status: 400 });
         }
 
-        if (eventStart && !Number.isNaN(eventStart.getTime())) {
-            const deadline = subHours(eventStart, 4);
-            const now = new Date();
-
-            if (isAfter(now, deadline)) {
-                return NextResponse.json({
-                    error: 'Registration closed. Registration must be completed at least 4 hours before the event starts.'
-                }, { status: 400 });
-            }
-        }
-
-        // Check limit
+        // 2. Check Capacity (Limit)
         if (event.limit > 0) {
-            const registrationsSnapshot = await getDb().collection('registrations').where('eventId', '==', id).get();
+            const registrationsSnapshot = await db.collection('registrations').where('eventId', '==', id).get();
             if (registrationsSnapshot.size >= event.limit) {
                 return NextResponse.json({ error: 'Event is full' }, { status: 400 });
             }
         }
 
-        // Check duplicate
-        const existingSnapshot = await getDb().collection('registrations')
+        // 3. Check Duplicate Registration
+        const existingSnapshot = await db.collection('registrations')
             .where('userId', '==', user.userId)
             .where('eventId', '==', id)
             .get();
@@ -76,36 +136,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             return NextResponse.json({ error: 'Already registered' }, { status: 400 });
         }
 
+        // 4. Register
         const newRegistration = {
             userId: user.userId,
             eventId: id,
             createdAt: new Date().toISOString()
         };
+        const regRef = await db.collection('registrations').add(newRegistration);
 
-        const regRef = await getDb().collection('registrations').add(newRegistration);
+        // 5. Notify
+        await updateNotifications(user, event);
 
-        // Send Email (async, don't block response)
-        try {
-            await sendConfirmationEmail(user.email, event);
-        } catch (emailError) {
-            console.error('Email sending failed:', emailError);
-        }
-
-        // Create Notification for Student
-        await getDb().collection('notifications').add({
-            userId: user.userId,
-            message: `You have successfully registered for the event: ${event.title}`,
-            createdAt: new Date().toISOString()
+        return NextResponse.json({
+            message: 'Registered successfully',
+            registration: { id: regRef.id, ...newRegistration }
         });
 
-        // Create Notification for Organizer
-        await getDb().collection('notifications').add({
-            userId: event.organizerId,
-            message: `New registration for ${event.title}: ${user.email}`,
-            createdAt: new Date().toISOString()
-        });
-
-        return NextResponse.json({ message: 'Registered successfully', registration: { id: regRef.id, ...newRegistration } });
     } catch (error) {
         console.error('Registration error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

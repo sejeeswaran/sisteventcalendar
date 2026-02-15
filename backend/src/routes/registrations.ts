@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { db } from '../lib/firebase-admin.js';
 import { getUserFromToken, AuthRequest } from '../lib/auth.js';
 
-const router = Router();
+const router: Router = Router();
 
 // GET /api/registrations
 router.get('/', async (req: AuthRequest, res: Response) => {

@@ -47,7 +47,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         }
 
         const body = await req.json();
-        const updateData: any = {
+        const updateData: Record<string, any> = {
             title: body.title,
             description: body.description,
             venue: body.venue,
