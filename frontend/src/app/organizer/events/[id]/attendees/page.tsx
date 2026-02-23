@@ -76,7 +76,7 @@ export default function AttendeesPage({ params }: Readonly<{ params: Promise<{ i
         const headers = ['S.No', 'Register Number', 'Name', 'Email', 'Registered At'];
         const csvContent = [
             headers.join(','),
-            ...attendees.map((attendee, index) => [
+            ...attendees.map((attendee: Attendee, index: number) => [
                 index + 1,
                 attendee.user?.registerNumber || 'N/A',
                 `"${attendee.user?.name || 'Unknown'}"`,
@@ -152,7 +152,7 @@ export default function AttendeesPage({ params }: Readonly<{ params: Promise<{ i
                                 </tr>
                             </thead>
                             <tbody>
-                                {attendees.map((attendee, index) => (
+                                {attendees.map((attendee: Attendee, index: number) => (
                                     <tr key={attendee.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
                                         <td style={{ padding: '12px 16px', color: '#333' }}>{index + 1}</td>
                                         <td style={{ padding: '12px 16px', fontFamily: 'monospace', color: '#333' }}>
